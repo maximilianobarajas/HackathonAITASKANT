@@ -128,7 +128,7 @@ ALLOWED_ORIGINS=http://127.0.0.1:5500,http://localhost:5500
 4. **Run the API**
 
 ```bash
-uvicorn main:app --reload --port 8000
+uvicorn app.main:app --reload
 ```
 
 5. **CORS (main.py)** — ensure something like:
