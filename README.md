@@ -41,7 +41,7 @@ Backend: **FastAPI** (OpenAI for text + speech). Frontend: **HTML/CSS/JS** (opti
 ---
 
 ## Repository structure
-
+```bash
 .
 ├─ app/
 │  ├─ routers/
@@ -61,7 +61,7 @@ Backend: **FastAPI** (OpenAI for text + speech). Frontend: **HTML/CSS/JS** (opti
 │     ├─ app.js
 │     └─ sketch.js         # optional p5.js background
 └─ README.md
-
+````
 
 
 ---
