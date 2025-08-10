@@ -264,26 +264,3 @@ openai>=1.40
 
 ---
 
-## Troubleshooting
-
-* **405 on `OPTIONS`** (CORS preflight)
-  Ensure `CORSMiddleware` allows your Live Server origin(s) (`http://127.0.0.1:5500`, `http://localhost:5500`) and methods/headers are `["*"]`.
-
-* **Audio “blink” or UI reset**
-  Use **streamed** TTS and the stable swap sequence:
-
-  1. `audio.pause()`
-  2. `audio.removeAttribute('src'); audio.load()`
-  3. `audio.src = URL.createObjectURL(blob); audio.load()`
-  4. Wait for `canplay`, then `audio.play()`
-
-* **404 to API**
-  Check `API.BASE` in `WEBSITE/WEBSITE/app.js` and confirm Uvicorn port.
-
-```
-::contentReference[oaicite:0]{index=0}
-```
-
-
-::contentReference[oaicite:0]{index=0}
-```
