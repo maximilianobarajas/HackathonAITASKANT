@@ -1,65 +1,56 @@
 
 # ANT PODCASTER — README
 
-**Ant Podcaster** is a minimal, fast writing assistant that helps you outline on the left pane and compose on the right—then turns your draft into a short **podcast** via streamed TTS. The backend is **FastAPI** (OpenAI for text + speech), the frontend is plain **HTML/CSS/JS** (with optional **p5.js** for an animated background).
+**Ant Podcaster** is a minimal, fast writing assistant that helps you outline on the left pane and compose on the right—then turns your draft into a short **podcast** via streamed TTS (no file writes, no dev-server reloads).  
+Backend: **FastAPI** (OpenAI for text + speech). Frontend: **HTML/CSS/JS** (optional **p5.js** background). Default layout is a **50/50 resizable split** with careful sizing so content never overlaps.
+
+
+## Table of contents
+- [Project description](#project-description)
+- [Repository structure](#repository-structure)
+- [Setup instructions](#setup-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Backend (FastAPI)](#backend-fastapi)
+  - [Frontend (VS Code Live Server)](#frontend-vs-code-live-server)
+  - [p5.js integration (optional)](#p5js-integration-optional)
+- [Environment & dependencies](#environment--dependencies)
+  - [Environment variables](#environment-variables)
+  - [requirements.txt](#requirementstxt)
+- [API quick reference](#api-quick-reference)
+- [Troubleshooting](#troubleshooting)
+
 ---
 
 ## Project description
 
 - **Backend (FastAPI)**
-  - Endpoints for:
+  - Endpoints:
     - `POST /generate_intro` — model-written introductions.
     - `POST /generate_subtopics?main_topic=&num_topics=` — structured subtopic suggestions.
     - `POST /generate_subtopic_paragraph` — per-subtopic expansions.
-    - `POST /podcast/build-openai` — **streams** `audio/mpeg` (TTS) to the browser; no file writes required.
-  - Uses OpenAI’s Python SDK for chat completions and text-to-speech.
-  - CORS configured for local dev (JSON POSTs from your frontend without preflight 405s).
+    - `POST /podcast/build-openai` — **streams** `audio/mpeg` (TTS) to the browser; frontend plays a **blob URL**.
+  - OpenAI (Python SDK) for **text generation** and **text-to-speech**.
+  - **CORS** configured for local dev to allow JSON POSTs from the frontend.
 
-- **Frontend (Vanilla JS + p5.js)**
+- **Frontend (Vanilla JS + optional p5.js)**
   - Left pane: subtopics (drag/drop, duplicate, per-subtopic AI paragraph).
   - Right pane: composer + toolbar + **audio player**.
-  - Audio is played from a **blob URL** created from the streamed response:
-    - `pause()` → `removeAttribute('src'); load()` → set `audio.src = URL.createObjectURL(blob)` → wait `canplay` → `play()`.
-  - Served locally via **VS Code → “Open with Live Server”** from `WEBSITE/WEBSITE/index.html`.
-
-- **Why streaming TTS?**
-  - No media files written to disk → no dev-server auto-reloads or UI resets.
-  - Faster handoff to `<audio>` with consistent, flicker-free playback.
+  - **Stable audio swap**: `pause()` → `removeAttribute('src'); load()` → set `src = URL.createObjectURL(blob)` → wait `canplay` → `play()`.
+  - Served via **VS Code → “Open with Live Server”** from `WEBSITE/WEBSITE/index.html`.
 
 ---
 
-## Setup instructions
+## Repository structure
 
-### 1) Prerequisites
-
-- **Python 3.11+**  
-  Download: https://www.python.org/downloads/
-- **Visual Studio Code**  
-  https://code.visualstudio.com/
-- **Live Server (VS Code extension)** for static frontend hosting  
-  https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer
-- **p5.js** (optional; loaded via CDN in your `index.html`)  
-  Getting started: https://p5js.org/tutorials/get-started/
-
-### 2) Clone & structure
-
-```bash
-git clone <your-repo-url>
-cd <your-repo>
-````
-
-Expected structure:
-
-```
 .
 ├─ app/
 │  ├─ routers/
 │  │  ├─ generation.py
-│  │  └─ podcast_openai.py
+│  │  └─ podcast\_openai.py
 │  └─ services/
-│     ├─ text_generation.py
-│     ├─ audio_openai.py
-│     └─ ai_client.py
+│     ├─ text\_generation.py
+│     ├─ audio\_openai.py
+│     └─ ai\_client.py
 ├─ main.py
 ├─ requirements.txt
 ├─ .env.example
@@ -68,11 +59,34 @@ Expected structure:
 │     ├─ index.html
 │     ├─ style.css
 │     ├─ app.js
-│     └─ sketch.js   # optional p5.js background
+│     └─ sketch.js         # optional p5.js background
 └─ README.md
-```
 
-### 3) Python environment
+
+
+---
+
+## Setup instructions
+
+### Prerequisites
+
+- **Python 3.11+** — https://www.python.org/downloads/  
+- **Visual Studio Code** — https://code.visualstudio.com/  
+- **Live Server (VS Code extension)** — https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer  
+- **p5.js** (optional) — Getting started: https://p5js.org/get-started/ • Learn: https://p5js.org/learn/  
+- **OpenAI API key** — https://platform.openai.com/
+
+---
+
+### Backend (FastAPI)
+
+1) **Clone & enter repo**
+```bash
+git clone <your-repo-url>
+cd <your-repo>
+````
+
+2. **Create virtual environment & install deps**
 
 **macOS / Linux**
 
@@ -92,15 +106,15 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4) Environment config
+3. **Configure environment**
 
-Copy and fill your environment file:
+Copy example and fill in:
 
 ```bash
 cp .env.example .env
 ```
 
-`.env` (example):
+Minimal `.env`:
 
 ```dotenv
 OPENAI_API_KEY=sk-...
@@ -108,21 +122,16 @@ OPENAI_API_BASE=
 OPENAI_MODEL=gpt-4o-mini
 OPENAI_TTS_MODEL=gpt-4o-mini-tts
 OPENAI_TTS_VOICE=onyx
-
-# Frontend origins allowed during local dev
 ALLOWED_ORIGINS=http://127.0.0.1:5500,http://localhost:5500
-
-# (Only if you choose file-based audio; streaming does not use this)
-PODCAST_OUT_DIR=media/podcasts
 ```
 
-### 5) Run the API
+4. **Run the API**
 
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-Minimal CORS in `main.py`:
+5. **CORS (main.py)** — ensure something like:
 
 ```python
 from fastapi import FastAPI
@@ -147,31 +156,50 @@ app.include_router(generation_router)
 app.include_router(podcast_openai_router)
 ```
 
-### 6) Launch the frontend with **VS Code Live Server**
+---
 
-1. Open **VS Code** in the repo root.
-2. Open `WEBSITE/WEBSITE/index.html` in the editor.
+### Frontend (VS Code Live Server)
+
+1. Open **VS Code** at the repo root.
+2. In the Explorer, open `WEBSITE/WEBSITE/index.html`.
 3. **Right-click → “Open with Live Server”.**
-4. Your browser should open at a URL like:
+4. The site opens at something like:
    `http://127.0.0.1:5500/WEBSITE/WEBSITE/`
 
-> If your API isn’t at `http://127.0.0.1:8000`, update `API.BASE` at the top of `WEBSITE/WEBSITE/app.js`.
-
-### 7) Add p5.js (optional)
-
-In `WEBSITE/WEBSITE/index.html`, include before `sketch.js`:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
-```
-
-Then ensure `sketch.js` is referenced after p5.
+> If your API is not `http://127.0.0.1:8000`, edit `API.BASE` at the top of `WEBSITE/WEBSITE/app.js`.
 
 ---
 
-## Dependencies / environment files
+### p5.js integration (optional)
 
-### `requirements.txt`
+Add p5.js via CDN in `WEBSITE/WEBSITE/index.html` (before `sketch.js`):
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+<script src="./sketch.js"></script>
+```
+
+* p5 “Get Started”: [https://p5js.org/get-started/](https://p5js.org/get-started/)
+* p5 “Learn”: [https://p5js.org/learn/](https://p5js.org/learn/)
+
+---
+
+## Environment & dependencies
+
+### Environment variables
+
+| Variable           | Required | Default                                       | Description                                        |
+| ------------------ | -------- | --------------------------------------------- | -------------------------------------------------- |
+| `OPENAI_API_KEY`   | ✅        | —                                             | OpenAI API key                                     |
+| `OPENAI_API_BASE`  | ❌        | OpenAI default                                | Custom API base if using a proxy                   |
+| `OPENAI_MODEL`     | ✅        | `gpt-4o-mini`                                 | Chat/completions model                             |
+| `OPENAI_TTS_MODEL` | ✅        | `gpt-4o-mini-tts`                             | TTS model                                          |
+| `OPENAI_TTS_VOICE` | ❌        | `onyx`                                        | TTS voice (e.g., `alloy`, `echo`, `fable`, `onyx`) |
+| `ALLOWED_ORIGINS`  | ✅        | `http://127.0.0.1:5500,http://localhost:5500` | CORS origins for local dev                         |
+| `PODCAST_OUT_DIR`  | ❌        | `media/podcasts`                              | Only used if you switch to file-based audio        |
+
+### requirements.txt
+
 ```txt
 fastapi>=0.115
 uvicorn[standard]>=0.30
@@ -181,35 +209,45 @@ httpx>=0.27
 openai>=1.40
 ```
 
-### `.env.example`
-
-```dotenv
-OPENAI_API_KEY=
-OPENAI_API_BASE=
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_TTS_MODEL=gpt-4o-mini-tts
-OPENAI_TTS_VOICE=onyx
-ALLOWED_ORIGINS=http://127.0.0.1:5500,http://localhost:5500
-PODCAST_OUT_DIR=media/podcasts
-```
-
 ---
 
 ## API quick reference
 
-* `POST /generate_intro`
-  **Body**: `{"main_topic": "Your topic", "word_count": 120}`
-  **Returns**: `{"introduction": "..."}`
+* **POST `/generate_intro`**
+  **Body**
 
-* `POST /generate_subtopics?main_topic=Topic&num_topics=6`
-  **Returns**: `{"subtopics": ["…", "…", ...]}`
+  ```json
+  { "main_topic": "Your topic", "word_count": 120 }
+  ```
 
-* `POST /generate_subtopic_paragraph`
-  **Body**: `{"text": "optional context", "subtopic": "Title", "word_count": 180}`
-  **Returns**: `{"paragraph": "..."}`
+  **Returns**
 
-* `POST /podcast/build-openai`
-  **Body**:
+  ```json
+  { "introduction": "..." }
+  ```
+
+* **POST** `/generate_subtopics?main_topic=Topic&num_topics=6`
+  **Returns**
+
+  ```json
+  { "subtopics": ["…","…", "..."] }
+  ```
+
+* **POST `/generate_subtopic_paragraph`**
+  **Body**
+
+  ```json
+  { "text": "optional context", "subtopic": "Title", "word_count": 180 }
+  ```
+
+  **Returns**
+
+  ```json
+  { "paragraph": "..." }
+  ```
+
+* **POST `/podcast/build-openai`** (TTS streamed as `audio/mpeg`)
+  **Body**
 
   ```json
   {
@@ -222,43 +260,30 @@ PODCAST_OUT_DIR=media/podcasts
   }
   ```
 
-  **Returns**: raw **audio/mpeg** stream (frontend converts to a blob URL and plays).
+  **Response**: raw `audio/mpeg` stream (frontend converts to a **blob URL** and plays).
 
 ---
 
 ## Troubleshooting
 
-* **405 on `OPTIONS` (CORS preflight)**
-  Ensure `CORSMiddleware` is enabled and the Live Server origin (`http://127.0.0.1:5500`) is listed in `allow_origins`.
+* **405 on `OPTIONS`** (CORS preflight)
+  Ensure `CORSMiddleware` allows your Live Server origin(s) (`http://127.0.0.1:5500`, `http://localhost:5500`) and methods/headers are `["*"]`.
 
-* **Audio “blink” or UI resets**
-  Use **streamed** TTS (no file writes). The frontend swaps audio sources with:
+* **Audio “blink” or UI reset**
+  Use **streamed** TTS and the stable swap sequence:
 
-  1. `pause()`
-  2. `removeAttribute('src'); load()`
-  3. set `src = URL.createObjectURL(blob)`, `load()`
-  4. wait for `canplay`, then `play()`
+  1. `audio.pause()`
+  2. `audio.removeAttribute('src'); audio.load()`
+  3. `audio.src = URL.createObjectURL(blob); audio.load()`
+  4. Wait for `canplay`, then `audio.play()`
 
-* **404 / wrong API base**
-  Verify `API.BASE` in `WEBSITE/WEBSITE/app.js` and that Uvicorn is running on the expected port.
-
----
-
-
-
----
-
-## Useful links
-
-* Python downloads — [https://www.python.org/downloads/](https://www.python.org/downloads/)
-* VS Code — [https://code.visualstudio.com/](https://code.visualstudio.com/)
-* Live Server extension — [https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
-* p5.js “Get Started” — [https://p5js.org/tutorials/get-started/](https://p5js.org/tutorials/get-started/)
-* FastAPI docs — [https://fastapi.tiangolo.com/](https://fastapi.tiangolo.com/)
-* Uvicorn — [https://www.uvicorn.org/](https://www.uvicorn.org/)
-* OpenAI API docs — [https://platform.openai.com/docs/](https://platform.openai.com/docs/)
+* **404 to API**
+  Check `API.BASE` in `WEBSITE/WEBSITE/app.js` and confirm Uvicorn port.
 
 ```
+::contentReference[oaicite:0]{index=0}
+```
+
 
 ::contentReference[oaicite:0]{index=0}
 ```
