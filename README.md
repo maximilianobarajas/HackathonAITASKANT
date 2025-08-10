@@ -1,4 +1,4 @@
-````markdown
+
 # ANT PODCASTER — README
 
 **Ant Podcaster** is a minimal, fast writing assistant that helps you outline on the left pane and compose on the right—then turns your draft into a short **podcast** via streamed TTS. The backend is **FastAPI** (OpenAI for text + speech), the frontend is plain **HTML/CSS/JS** (with optional **p5.js** for an animated background).
